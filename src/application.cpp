@@ -10,7 +10,7 @@ bool Application::initialized = false;
 Mix_Chunk* Application::jumpingSound = nullptr;
 
 
-Application::Application(const std::string &appName, int width, int height, Bird* bird) {
+Application::Application(const std::string &appName, int width, int height) {
     width = abs(width);
     height = abs(height);
 
@@ -33,21 +33,14 @@ Application::Application(const std::string &appName, int width, int height, Bird
     if (!(imgFlag && IMG_Init(imgFlag)))
         throwIMGError("Cannot initialize IMG.");
 
-    if (bird) {
-        mBird = bird;
-        mBirdCreated = false;
-    } else {
-        unsigned hitboxSize = width / 40;
-        if (width < height)
-            hitboxSize = height / 40;
+    
+    unsigned hitboxSize = width / 40;
+    if (width < height)
+        hitboxSize = height / 40;
 
-        mBird = new Bird("./images/bird.png", 1.6 * hitboxSize, hitboxSize, width/2, height/2);
-        if (!mBird)
-            throw std::runtime_error("Cannot allocate memory to instanciate bird.");
+    mBird = new Bird("./images/bird.png", 1.6 * hitboxSize, hitboxSize, width/2, height/2);
 
-        mBird->setFlyingRange(0, height);
-        mBirdCreated = true;
-    }
+    mBird->setFlyingRange(0, height);
 
     mBirdTexture = loadTextureFromBird(mRenderer, *mBird);
     if (!mBirdTexture)
@@ -65,8 +58,8 @@ Application::Application(const std::string &appName, int width, int height, Bird
 
 
 Application::~Application() {
-    if (mBirdCreated)
-        delete mBird; // else we assume the user can access the bird object somewhere else
+    delete mBird;
+    
     SDL_DestroyTexture(mBirdTexture);
 
     SDL_DestroyRenderer(mRenderer);

@@ -14,7 +14,6 @@ class Application {
         SDL_Renderer* mRenderer;
 
         Bird* mBird;
-        bool mBirdCreated;
         SDL_Texture* mBirdTexture;
 
         void renderBird();
@@ -36,7 +35,7 @@ class Application {
         static void playSound(Mix_Chunk* chunk);
 
     public:
-        Application(const std::string &appName, int width, int height, Bird* bird = nullptr);
+        Application(const std::string &appName, int width, int height);
 
         ~Application();
 
