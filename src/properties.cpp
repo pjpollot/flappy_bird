@@ -20,7 +20,7 @@ Bird::~Bird() {
 
 
 void Bird::jump() {
-    if (mCooldown >= cooldownLimit) {
+    if (!inCooldown()) {
         mYSpeed = jumpSpeed;
         mCooldown = 0.;
     }
@@ -65,6 +65,11 @@ void Bird::update(const float &dt) {
         mYSpeed += fallingAcceleration * dt;
 
     mCooldown += dt;
+}
+
+
+bool Bird::inCooldown() const {
+    return mCooldown < cooldownLimit;
 }
 
 

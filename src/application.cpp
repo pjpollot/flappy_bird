@@ -7,6 +7,8 @@
 
 bool Application::initialized = false;
 
+Mix_Chunk* Application::jumpingSound = nullptr;
+
 
 Application::Application(const std::string &appName, int width, int height, Bird* bird) {
     width = abs(width);
@@ -15,7 +17,7 @@ Application::Application(const std::string &appName, int width, int height, Bird
     if (initialized)
         throw std::runtime_error("SDL already initialized. Cannot initialize twice.");
 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
         throwSDLError("Cannot load SDL2.");
 
     mWindow = SDL_CreateWindow(appName.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
@@ -50,6 +52,13 @@ Application::Application(const std::string &appName, int width, int height, Bird
     mBirdTexture = loadTextureFromBird(mRenderer, *mBird);
     if (!mBirdTexture)
         throwSDLError("Cannot load texture from bird.");
+
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+        throwMixError("Cannot load Mix.");
+
+    jumpingSound = Mix_LoadWAV("./sounds/sfx_wing.wav");
+    if (!jumpingSound)
+        throwMixError("Cannot load jumping sfx.");
 
     initialized = true;
 }
@@ -93,6 +102,8 @@ void Application::start() {
             else if (event.type == SDL_KEYDOWN) {
                 switch (event.key.keysym.sym) {
                     case SDLK_SPACE:
+                        if (!mBird->inCooldown())
+                            playSound(jumpingSound);
                         mBird->jump();
                         break;
 
@@ -134,6 +145,16 @@ void Application::throwSDLError(const std::string &message) {
 void Application::throwIMGError(const std::string &message) {
     const std::string errorMsg = message + "\nIMG error: " + IMG_GetError();
     throw std::runtime_error(errorMsg);
+}
+
+void Application::throwMixError(const std::string &message) {
+    const std::string errorMsg = message + "\nMix error: " + Mix_GetError();
+    throw std::runtime_error(errorMsg);
+}
+
+
+void Application::playSound(Mix_Chunk* chunk) {
+    Mix_PlayChannel(-1, chunk, 0);
 }
 
 

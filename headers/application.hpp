@@ -4,6 +4,7 @@
 #include "properties.hpp"
 
 #include "SDL2/SDL.h"
+#include "SDL2/SDL_mixer.h"
 #include <iostream>
 
 
@@ -16,7 +17,11 @@ class Application {
         bool mBirdCreated;
         SDL_Texture* mBirdTexture;
 
-        //unsigned mWidth, mHeight;
+        void renderBird();
+
+        void render();
+
+        static Mix_Chunk* jumpingSound;
 
         static bool initialized;
 
@@ -26,9 +31,9 @@ class Application {
 
         static void throwIMGError(const std::string &message);
 
-        void renderBird();
+        static void throwMixError(const std::string &message);
 
-        void render();
+        static void playSound(Mix_Chunk* chunk);
 
     public:
         Application(const std::string &appName, int width, int height, Bird* bird = nullptr);

@@ -52,6 +52,8 @@ class Bird: public Property {
         void update(const float &dt);
 
         double getAngle() const;
+
+        bool inCooldown() const;
 };
 
 
