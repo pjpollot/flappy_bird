@@ -1,16 +1,24 @@
 #include "application.hpp"
 
 #include "SDL2/SDL_image.h"
+#include "unistd.h"
+
 #include <stdexcept>
 #include <cmath>
+#include <limits>
 
 
 bool Application::initialized = false;
+std::map<std::string, Mix_Chunk*> Application::sounds;
 
-Mix_Chunk* Application::jumpingSound = nullptr;
+static std::map<std::string, std::string> soundLinks = {
+    {"wing", "./sounds/sfx_wing.wav"}, 
+    {"hit", "./sounds/sfx_hit.wav"},
+    {"point", "./sounds/sfx_point.wav"},
+};
 
 
-Application::Application(const std::string &appName, int width, int height) {
+Application::Application(const std::string &appName, int width, int height, const unsigned &nPipes) {
     width = abs(width);
     height = abs(height);
 
@@ -27,13 +35,12 @@ Application::Application(const std::string &appName, int width, int height) {
     mRenderer = SDL_CreateRenderer(mWindow, -1, SDL_RENDERER_ACCELERATED);
     if (!mRenderer)
         throwSDLError("Cannot create renderer.");
-
     
     int imgFlag = IMG_INIT_PNG;
     if (!(imgFlag && IMG_Init(imgFlag)))
         throwIMGError("Cannot initialize IMG.");
 
-    
+    // Create bird
     unsigned hitboxSize = width / 40;
     if (width < height)
         hitboxSize = height / 40;
@@ -48,10 +55,29 @@ Application::Application(const std::string &appName, int width, int height) {
 
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
         throwMixError("Cannot load Mix.");
+    
+    for (auto &[key, path]: soundLinks) {
+        sounds[key] = Mix_LoadWAV(path.c_str());
+        if (!sounds[key]) 
+            throwMixError("Cannot load sfx from path: " + path);
+    }
 
-    jumpingSound = Mix_LoadWAV("./sounds/sfx_wing.wav");
-    if (!jumpingSound)
-        throwMixError("Cannot load jumping sfx.");
+    // create pipes
+    float thickness = width / (4 * nPipes), 
+    maxHeight = 0.8 * height;
+
+    mInterDistance = (width - nPipes * thickness) / (nPipes + 1);
+    float x = width + mInterDistance;
+
+    for (unsigned i = 0; i < nPipes; i++) {
+        Pipe pipe(x, thickness, maxHeight);
+        mPipes.push_back(pipe);
+        x += thickness + mInterDistance;
+    }
+
+    mWidth = width;
+    mHeight = height;
+    mScore = 0;
 
     initialized = true;
 }
@@ -72,8 +98,22 @@ Application::~Application() {
 
 void Application::renderBird() {
     SDL_Rect box = {mBird->getX() - mBird->getWidth() / 2, mBird->getY() - mBird->getHeight() / 2, mBird->getWidth(), mBird->getHeight()};
-    //SDL_RenderCopy(mRenderer, mBirdTexture, nullptr, &box);
     SDL_RenderCopyEx(mRenderer, mBirdTexture, nullptr, &box, mBird->getAngle(), nullptr, SDL_FLIP_NONE);
+}
+
+
+void Application::renderPipes() {
+    SDL_Rect box;
+    SDL_SetRenderDrawColor(mRenderer, 146, 20, 12, 255);
+
+    for (auto pipe: mPipes) {
+        box.x = pipe.getX();
+        box.y = 0;
+        box.w = pipe.getThickness();
+        box.h = pipe.getY();
+
+        SDL_RenderFillRect(mRenderer, &box);
+    }
 }
 
 
@@ -83,6 +123,10 @@ void Application::start() {
 
     Uint32 t0 = SDL_GetTicks(), t1;
     float dt;
+
+    bool underPipe = false, 
+    currentlyUnderPipe = false, 
+    collision = false;
 
     while (run) {
         t1 = SDL_GetTicks();
@@ -96,7 +140,7 @@ void Application::start() {
                 switch (event.key.keysym.sym) {
                     case SDLK_SPACE:
                         if (!mBird->inCooldown())
-                            playSound(jumpingSound);
+                            playSound("wing");
                         mBird->jump();
                         break;
 
@@ -109,8 +153,23 @@ void Application::start() {
                 }
             }
         }
+
         
         mBird->update(dt);
+        updatePipes(dt);
+
+        birdStatusCheck(currentlyUnderPipe, collision);
+        if (collision) {
+            playSound("hit");
+            sleep(1);
+            run = false;
+        } else if (underPipe && !currentlyUnderPipe) {
+            playSound("point");
+            mScore++;
+        }
+            
+        underPipe = currentlyUnderPipe;
+
         render();
 
         t0 = t1;
@@ -124,6 +183,7 @@ void Application::render() {
     SDL_RenderClear(mRenderer);
 
     renderBird();
+    renderPipes();
 
     SDL_RenderPresent(mRenderer);
 }
@@ -146,8 +206,12 @@ void Application::throwMixError(const std::string &message) {
 }
 
 
-void Application::playSound(Mix_Chunk* chunk) {
-    Mix_PlayChannel(-1, chunk, 0);
+void Application::playSound(const std::string &soundName) {
+    auto entry = sounds.find(soundName);
+    if (entry == sounds.end())
+        throw std::runtime_error("Sound effect '" + soundName + "' does not exist.");
+
+    Mix_PlayChannel(-1, entry->second, 0);
 }
 
 
@@ -164,4 +228,38 @@ SDL_Texture* Application::loadTextureFromBird(SDL_Renderer* renderer, const Bird
     SDL_FreeSurface(loadedSurface);
 
     return texture;
+}
+
+
+void Application::updatePipes(const float &dt) {
+    std::vector<unsigned> outOfScreenPipeIndexes;
+    
+    for (unsigned i = 0; i < mPipes.size(); i++) {
+        mPipes[i].update(dt);
+
+        if (mPipes[i].outOfScreen())
+            outOfScreenPipeIndexes.push_back(i);
+    }
+
+    float x = mWidth;
+    for (auto index: outOfScreenPipeIndexes) {
+        mPipes[index].sample(x);
+        x += mPipes[index].getExactThickness() + mInterDistance;
+    }
+
+}
+
+
+void Application::birdStatusCheck(bool &sameX, bool &collision) {
+    sameX = false;
+    collision = false;
+
+    bool localSameX, localCollision;
+    unsigned i = 0;
+    while (i < mPipes.size() && !collision) {
+        mPipes[i].positionCheck(*mBird, localSameX, localCollision);
+        collision |= localCollision;
+        sameX |= localSameX;
+        i++;
+    }
 }

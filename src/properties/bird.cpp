@@ -27,7 +27,7 @@ void Bird::jump() {
 }
 
 
-double Bird::getAngle() const {
+float Bird::getAngle() const {
     return 180 * atan(mYSpeed / Property::forwardSpeed) / M_PI;
 }
 
@@ -70,14 +70,4 @@ void Bird::update(const float &dt) {
 
 bool Bird::inCooldown() const {
     return mCooldown < cooldownLimit;
-}
-
-
-int Property::getX() const {
-    return (int) mX;
-}
-
-
-int Property::getY() const {
-    return (int) mY;
 }

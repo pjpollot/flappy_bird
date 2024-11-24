@@ -12,14 +12,12 @@ class Property {
         static float forwardSpeed;
     
     public:
-        //trivial getters
+        float getExactX() const {return mX;}
+        float getExactY() const {return mY;}
         int getWidth() const {return mWidth;}
         int getHeight() const {return mHeight;}
-
-        //other getters
-        int getX() const;
-        int getY() const;
-
+        int getX() const {return (int) mX;}
+        int getY() const {return (int) mY;}
 
         virtual void update(const float &dt) {}
 };
@@ -51,9 +49,32 @@ class Bird: public Property {
 
         void update(const float &dt);
 
-        double getAngle() const;
+        float getAngle() const;
 
         bool inCooldown() const;
+};
+
+
+class Pipe: public Property {
+    public:
+        float mMaxHeight, mThickness;
+        
+        static float minHeightRatio;
+
+    public: 
+        Pipe(const float &x, const float &thickness, const float &maxHeight);
+
+        void update(const float &dt);
+
+        void sample(const float &x);
+
+        void positionCheck(const Property &property, bool &sameX, bool &collision) const;
+
+        bool outOfScreen() const;
+
+
+        float getExactThickness() const {return mThickness;}
+        int getThickness() const {return (int) mThickness;}
 };
 
 

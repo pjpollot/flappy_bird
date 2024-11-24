@@ -5,22 +5,37 @@
 
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_mixer.h"
+
 #include <iostream>
+#include <vector>
+#include <map>
 
 
 class Application {
     private:
+        int mWidth, mHeight;
+        unsigned mScore;
+
         SDL_Window* mWindow;
         SDL_Renderer* mRenderer;
 
         Bird* mBird;
         SDL_Texture* mBirdTexture;
 
+        std::vector<Pipe> mPipes;
+        float mInterDistance;
+
+
         void renderBird();
+
+        void renderPipes();
 
         void render();
 
-        static Mix_Chunk* jumpingSound;
+        void updatePipes(const float &dt);
+
+
+        static std::map<std::string, Mix_Chunk*> sounds;
 
         static bool initialized;
 
@@ -32,14 +47,19 @@ class Application {
 
         static void throwMixError(const std::string &message);
 
-        static void playSound(Mix_Chunk* chunk);
+        static void playSound(const std::string &soundName);
+
+        void birdStatusCheck(bool &sameX, bool &collision);
 
     public:
-        Application(const std::string &appName, int width, int height);
+        Application(const std::string &appName, int width, int height, const unsigned &nPipes = 3);
 
         ~Application();
 
         void start();
+
+
+        unsigned getScore() const {return mScore;}
 };
 
 
