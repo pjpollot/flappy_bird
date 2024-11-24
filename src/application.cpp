@@ -107,10 +107,10 @@ void Application::renderPipes() {
     SDL_SetRenderDrawColor(mRenderer, 146, 20, 12, 255);
 
     for (auto pipe: mPipes) {
-        box.x = pipe.getX();
-        box.y = 0;
-        box.w = pipe.getThickness();
-        box.h = pipe.getY();
+        box.x = pipe.getX() - pipe.getWidth()/2;
+        box.y = pipe.getY() - pipe.getHeight()/2;
+        box.w = pipe.getWidth();
+        box.h = pipe.getHeight();
 
         SDL_RenderFillRect(mRenderer, &box);
     }
@@ -243,8 +243,8 @@ void Application::updatePipes(const float &dt) {
 
     float x = mWidth;
     for (auto index: outOfScreenPipeIndexes) {
-        mPipes[index].sample(x);
-        x += mPipes[index].getExactThickness() + mInterDistance;
+        mPipes[index].sample(x + mPipes[index].getWidth()/2);
+        x += mPipes[index].getWidth()/2 + mInterDistance;
     }
 
 }

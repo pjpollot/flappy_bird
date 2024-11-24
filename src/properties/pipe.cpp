@@ -4,8 +4,8 @@
 #include <random>
 
 
-Pipe::Pipe(const float &x, const float &thickness, const float &maxHeight) {
-    mThickness = abs(thickness);
+Pipe::Pipe(const float &x, const int &width, const float &maxHeight) {
+    mWidth = abs(width);
     mMaxHeight = abs(maxHeight);
     sample(x);
 }
@@ -17,7 +17,9 @@ void Pipe::sample(const float &x) {
     float u = (float) std::rand() / RAND_MAX;
     if (u < minHeightRatio)
         u = minHeightRatio;
-    mY = u * mMaxHeight;
+    
+    mHeight = u * mMaxHeight;
+    mY = mHeight/2;
 }
 
 
@@ -25,10 +27,15 @@ void Pipe::positionCheck(const Property &property, bool &sameX, bool &collision)
     sameX = false;
     collision = false;
 
-    if (property.getExactX() >= mX && property.getExactX() <= mX + mThickness) {
+    float left = mX - mWidth/2,
+    right = mX + mWidth/2;
+    if (property.getExactX() + property.getWidth()/2 >= left && property.getExactX() - property.getWidth()/2 <= right) {
         sameX = true;
 
-        if (property.getExactY() <= mY)
+
+        float up = mY - mHeight/2,
+        down = mY + mHeight/2;
+        if (property.getExactY() + property.getHeight()/2 >= up && property.getExactY() - property.getHeight()/2 <= down)
             collision = true;
     }
 }
@@ -40,5 +47,5 @@ void Pipe::update(const float &dt) {
 
 
 bool Pipe::outOfScreen() const {
-    return mX + mThickness < 0;
+    return mX + mWidth/2 < 0;
 }

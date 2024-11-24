@@ -14,10 +14,11 @@ class Property {
     public:
         float getExactX() const {return mX;}
         float getExactY() const {return mY;}
-        int getWidth() const {return mWidth;}
-        int getHeight() const {return mHeight;}
         int getX() const {return (int) mX;}
         int getY() const {return (int) mY;}
+        
+        int getWidth() const {return mWidth;}
+        int getHeight() const {return mHeight;}
 
         virtual void update(const float &dt) {}
 };
@@ -57,12 +58,12 @@ class Bird: public Property {
 
 class Pipe: public Property {
     public:
-        float mMaxHeight, mThickness;
+        float mMaxHeight;
         
         static float minHeightRatio;
 
     public: 
-        Pipe(const float &x, const float &thickness, const float &maxHeight);
+        Pipe(const float &x, const int &width, const float &maxHeight);
 
         void update(const float &dt);
 
@@ -71,10 +72,6 @@ class Pipe: public Property {
         void positionCheck(const Property &property, bool &sameX, bool &collision) const;
 
         bool outOfScreen() const;
-
-
-        float getExactThickness() const {return mThickness;}
-        int getThickness() const {return (int) mThickness;}
 };
 
 
