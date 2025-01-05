@@ -4,7 +4,7 @@ A really short project to replicate Flappy Bird using `SDL2`.
 
 *Context: I created this project to understand better the library SDL2 in order to create a simple game engine.*
 
-<video src="gameplay.mp4" controls="true" width="600px"></video>
+![gameplay](./gameplay.gif)
 
 ## Install
 
