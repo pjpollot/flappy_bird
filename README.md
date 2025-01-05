@@ -6,6 +6,8 @@ A really short project to replicate Flappy Bird using `SDL2`.
 
 ![gameplay](./gameplay.gif)
 
+(Afterimages are only present in the gif image)
+
 ## Install
 
 **Please change the headers and library links beforehand in the `Makefile` so you can import correctly SDL2 from your local environment.**
